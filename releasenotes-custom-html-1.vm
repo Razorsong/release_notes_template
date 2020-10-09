@@ -1,0 +1,126 @@
+#disable_html_escaping()
+## Macros for get and render release notes
+## Custom field name is case-sensitive
+#macro (getReleaseNoteComment $issue $customFieldManager)
+#set ($customFields = $customFieldManager.getCustomFieldObjects($issue.project.getLong("id"), $issue.issueType.getString("id")))
+#foreach($customField in $customFields)
+## Get release notes text
+#if($customField.name.equals("Release Notes"))
+#if($customField.getValue($issue)) #set($releaseNotesText = "$textUtils.htmlEncode($customField.getValue($issue))")##
+#else #set($releaseNotesText = "")##
+#end
+#end
+#end
+$releaseNotesText##
+#end
+
+#macro (getReleaseArtifactLink $issue $customFieldManager)
+#set ($customFields = $customFieldManager.getCustomFieldObjects($issue.project.getLong("id"), $issue.issueType.getString("id")))
+#foreach($customField in $customFields)
+## Get artifact link
+#if($customField.name.equals("Latest artifact link"))
+#if($customField.getValue($issue))$customField.getValue($issue)##
+#end
+#end
+#end
+#end
+
+
+<title>$action.getText('release.notes.html.title', $project, $version) </title>
+
+<body>
+
+## block with button "Configure release notes"
+<div class="ops-cont">
+    <ul class="ops">
+        <li>
+            <a class="button first last" href="$!requestContext.baseUrl/secure/ConfigureReleaseNote.jspa?projectId=${versionObj.projectObject.id}&version=${versionObj.id}">$action.getText('releasenotes.configure')</a>
+        </li>
+    </ul>
+</div>
+## end block
+
+## Tasks list rendering
+#foreach ($issueType in $issueTypes)
+#if($issueType.issues.size() > 0)
+<h2>Задача</h2>
+<ul>
+#foreach ($issue in $issueType.issues)
+#set ($releaseNotesText = "#getReleaseNoteComment($issue $customFieldManager)")
+#if( $releaseNotesText.length() > 3 )
+
+<li>[<a href='$requestContext.canonicalBaseUrl/browse/$issue.key'>$issue.key</a>] - $releaseNotesText</li>
+#end
+#set ($releaseNotesText = "")
+#end
+</ul>
+#end
+#end
+##  end Tasks list rendering
+
+## Artifacts list rendering
+#foreach ($issueType in $issueTypes)
+#if($issueType.issues.size() > 1)
+<h2>Релизом затронуто</h2>
+<ul>
+#foreach ($issue in $issueType.issues)
+#set ($artifactLink = "#getReleaseArtifactLink($issue $customFieldManager)")
+#if( $artifactLink.length() > 3 )
+<li>[<a href='$requestContext.canonicalBaseUrl/browse/$issue.key'>$issue.key</a>] - <a href='$artifactLink'>Ссылка на библиотеку</a> </li>
+#end
+#set ($artifactLink = "")
+#end
+</ul>
+#end
+#end
+##  end Artifacts list rendering
+
+
+
+<a name="editarea"></a>
+<h2>$action.getText('release.notes.edit.copy')</h2>
+<p>$action.getText('release.notes.description')</p>
+
+<textarea rows="40" cols="120" id="editcopy">
+
+#doubleEncode($action.getText('release.notes.heading', $project, $version))
+
+## Tasks list rendering
+#foreach ($issueType in $issueTypes)
+#if($issueType.issues.size() > 0)
+<h2>Задача</h2>
+<ul>
+#foreach ($issue in $issueType.issues)
+#set ($releaseNotesText = "#getReleaseNoteComment($issue $customFieldManager)")
+#if( $releaseNotesText.length() > 3 )
+
+<li>[<a href='$requestContext.canonicalBaseUrl/browse/$issue.key'>$issue.key</a>] $releaseNotesText</li>
+#end
+#set ($releaseNotesText = "")
+#end
+</ul>
+#end
+#end
+##  end Tasks list rendering
+
+## Artifacts list rendering
+#foreach ($issueType in $issueTypes)
+#if($issueType.issues.size() > 1)
+<h2>Релизом затронуто</h2>
+<ul>
+#foreach ($issue in $issueType.issues)
+#set ($artifactLink = "#getReleaseArtifactLink($issue $customFieldManager)")
+#if( $artifactLink.length() > 3 )
+<li>[<a href='$requestContext.canonicalBaseUrl/browse/$issue.key'>$issue.key</a>] - <a href='$artifactLink'>Ссылка на библиотеку</a> </li>
+#end
+#set ($artifactLink = "")
+#end
+</ul>
+#end
+#end
+##  end Artifacts list rendering
+
+
+</textarea>
+
+</body>
